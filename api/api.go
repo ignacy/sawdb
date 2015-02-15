@@ -36,3 +36,17 @@ func (db SawDB) Get(key string) (value string, err error) {
 
   return value, nil
 }
+
+func (db SawDB) Delete(key string) (err error) {
+  fmt.Println("Removing record for key:", key)
+
+  _, ok := db.Items[key]
+
+  if ok != true {
+    return errors.New("Record not found")
+  }
+
+  delete(db.Items, key)
+
+  return nil
+}

@@ -26,3 +26,19 @@ func Test_Put_AndThen_Get(t *testing.T) {
     t.Log("Record saved and then retrived.")
   }
 }
+
+func Test_Put_ThenDelete_AndThen_Get(t *testing.T) {
+  db := NewSawDB()
+  db.Put("something", "different")
+
+  if err := db.Delete("something"); err != nil {
+    t.Error("Failed to remove record")
+  }
+
+  if _, err := db.Get("something"); err == nil {
+    t.Error("Expected an error as the record should be missing")
+  } else {
+    t.Log("Record saved and then removed from DB")
+  }
+
+}
