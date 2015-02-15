@@ -27,6 +27,17 @@ func Test_Put_AndThen_Get(t *testing.T) {
   }
 }
 
+func Test_Get_NonExistingRecord(t *testing.T) {
+  db := NewSawDB()
+
+  _, err := db.Get("NonExistingKey")
+  if err == nil {
+    t.Error("Expected error - missing value")
+  } else {
+    t.Log("Returns error when value for key is missing")
+  }
+}
+
 func Test_Put_ThenDelete_AndThen_Get(t *testing.T) {
   db := NewSawDB()
   db.Put("something", "different")
