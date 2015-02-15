@@ -5,6 +5,11 @@ import (
   "fmt"
 )
 
+var (
+  ErrRecordNotFound = errors.New("Record not found in database")
+  ErrSaveFailed     = errors.New("Unable to save record into db")
+)
+
 type SawDB struct {
   Name  string
   Items map[string]string
@@ -21,7 +26,7 @@ func (db SawDB) Put(key string, value string) (err error) {
   fmt.Printf("Inserting %s under key %s \n", value, key)
   db.Items[key] = value
   if _, ok := db.Items[key]; ok != true {
-    return errors.New("Unable to save record into db")
+    return ErrSaveFailed
   }
   return nil
 }
@@ -31,7 +36,7 @@ func (db SawDB) Get(key string) (value string, err error) {
   value, ok := db.Items[key]
 
   if ok != true {
-    return "", errors.New("Record not found")
+    return "", ErrRecordNotFound
   }
 
   return value, nil
@@ -43,7 +48,7 @@ func (db SawDB) Delete(key string) (err error) {
   _, ok := db.Items[key]
 
   if ok != true {
-    return errors.New("Record not found")
+    return ErrRecordNotFound
   }
 
   delete(db.Items, key)
