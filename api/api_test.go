@@ -53,3 +53,16 @@ func Test_Put_ThenDelete_AndThen_Get(t *testing.T) {
   }
 
 }
+
+func Test_Delete_Non_Existing(t *testing.T) {
+  db := NewSawDB()
+
+  err := db.Delete("something")
+
+  if err == nil {
+    t.Error("Expected an error as the record should be missing")
+  } else {
+    t.Log("Error returned when trying to delete non exisitng record")
+  }
+
+}
