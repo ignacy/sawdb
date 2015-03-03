@@ -10,14 +10,15 @@ import (
 )
 
 type ConnectionManager struct {
-  initiated bool
-  db        *api.SawDB
+  initiated       bool
+  ConnectionCount int
+  Db              *api.SawDB
 }
 
 func Initiate() *ConnectionManager {
   return &ConnectionManager{
     initiated: false,
-    db:        api.NewSawDB(),
+    Db:        api.NewSawDB(),
   }
 }
 
@@ -28,10 +29,10 @@ func handleAction(action string, cM *ConnectionManager) error {
   }
 
   if components[0] == "S" {
-    cM.db.Put(components[1], components[2])
+    cM.Db.Put(components[1], components[2])
   }
 
-  value, err := cM.db.Get(components[1])
+  value, err := cM.Db.Get(components[1])
   if err != nil {
     log.Println("Failed to store record")
   } else {
@@ -49,23 +50,28 @@ func (cM *ConnectionManager) Listen(listener net.Listener) {
       log.Println("Connection error", err)
     }
 
+    cM.ConnectionCount++
     log.Println(conn.RemoteAddr(), " connected")
 
-    messageBuffer := make([]byte, 1024)
-    _, err = conn.Read(messageBuffer)
-    if err != nil {
-      log.Println("Failed to read in a message")
-    }
-
-    message := string(messageBuffer)
-    log.Println("Received was: ", message)
-
-    if err = handleAction(message, cM); err != nil {
-      log.Println("Error while handling action ", err)
-    }
-
-    conn.Write([]byte("All good action handled \t\r\n"))
+    go cM.handleMessage(conn)
   }
+}
+
+func (cM *ConnectionManager) handleMessage(conn net.Conn) {
+  messageBuffer := make([]byte, 1024)
+  _, err := conn.Read(messageBuffer)
+  if err != nil {
+    log.Println("Failed to read in a message")
+  }
+
+  message := string(messageBuffer)
+  log.Println("Received was: ", message)
+
+  if err = handleAction(message, cM); err != nil {
+    log.Println("Error while handling action ", err)
+  }
+
+  conn.Write([]byte("All good action handled \t\r\n"))
 }
 
 func main() {
