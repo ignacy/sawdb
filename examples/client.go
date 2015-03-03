@@ -14,7 +14,7 @@ func main() {
     fmt.Println("Could not connect to sawDB")
   }
 
-  keyToStore := []byte("STORE\tkey\tvalue\t\r\n")
+  keyToStore := []byte("S\tkey\tvalue\t\r\n")
   conn.Write(keyToStore)
 
   messageBuffer := make([]byte, 1024)

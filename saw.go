@@ -27,7 +27,7 @@ func handleAction(action string, cM *ConnectionManager) error {
     return errors.New("Malformed action description")
   }
 
-  if components[0] == "STORE" {
+  if components[0] == "S" {
     cM.db.Put(components[1], components[2])
   }
 
