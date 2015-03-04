@@ -1,10 +1,8 @@
 package main
 
 import (
-  "errors"
   "log"
   "net"
-  "strings"
 
   "github.com/ignacy/sawdb/api"
 )
@@ -20,25 +18,6 @@ func Initiate() *ConnectionManager {
     initiated: false,
     Db:        api.NewSawDB(),
   }
-}
-
-func handleAction(action string, cM *ConnectionManager) error {
-  components := strings.Split(action, "\t")
-  if len(components) < 3 {
-    return errors.New("Malformed action description")
-  }
-
-  if components[0] == "S" {
-    cM.Db.Put(components[1], components[2])
-  }
-
-  value, err := cM.Db.Get(components[1])
-  if err != nil {
-    log.Println("Failed to store record")
-  } else {
-    log.Println("Stored record: ", value)
-  }
-  return nil
 }
 
 func (cM *ConnectionManager) Listen(listener net.Listener) {
@@ -67,11 +46,23 @@ func (cM *ConnectionManager) handleMessage(conn net.Conn) {
   message := string(messageBuffer)
   log.Println("Received was: ", message)
 
-  if err = handleAction(message, cM); err != nil {
-    log.Println("Error while handling action ", err)
+  request, err := api.NewRequest(message)
+  if err != nil {
+    log.Println("Error while creating DB request ", err)
   }
 
-  conn.Write([]byte("All good action handled \t\r\n"))
+  v, err := request.Process(*cM.Db)
+
+  if err != nil {
+    log.Println("Failed request processing", err)
+  }
+
+  if v != "" {
+    conn.Write([]byte(v))
+  } else {
+    conn.Write([]byte("All good action handled"))
+  }
+
 }
 
 func main() {

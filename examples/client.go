@@ -14,7 +14,7 @@ func main() {
     fmt.Println("Could not connect to sawDB")
   }
 
-  keyToStore := []byte("S\tkey\tvalue\t\r\n")
+  keyToStore := []byte("S\tkey\tvalue\t")
   conn.Write(keyToStore)
 
   messageBuffer := make([]byte, 1024)
@@ -25,4 +25,18 @@ func main() {
 
   response := string(messageBuffer)
   log.Println("Received response was: ", response)
+
+  getValue := []byte("G\tvalue\t\r\n")
+  conn.Write(getValue)
+
+  messageBuffer = make([]byte, 1024)
+  _, err = conn.Read(messageBuffer)
+  if err != nil {
+    log.Println("Failed to read in a message")
+  }
+
+  response = string(messageBuffer)
+  log.Println("Received response was: ", response)
+  conn.Close()
+
 }
