@@ -72,6 +72,8 @@ func (cM *ConnectionManager) handleMessage(conn net.Conn) (err error) {
 
   v, err := request.Process(*cM.Db)
 
+  log.Printf("Values: %+v \n", cM.Db.Items)
+
   if err != nil {
     log.Println("Failed request processing", err)
     return

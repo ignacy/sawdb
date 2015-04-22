@@ -23,7 +23,7 @@ func main() {
 
   defer conn2.Close()
 
-  keyToStore := []byte("S\tkey\tvalue\t")
+  keyToStore := []byte("S\tfoo\tbar\t")
   go conn1.Write(keyToStore)
 
   messageBuffer := make([]byte, 1024)
@@ -35,7 +35,7 @@ func main() {
   response := string(messageBuffer)
   log.Println("Received response was: ", response)
 
-  getValue := []byte("G\tvalue\t\r\n")
+  getValue := []byte("G\tfoo\t\r\n")
   go conn2.Write(getValue)
 
   messageBuffer = make([]byte, 1024)
