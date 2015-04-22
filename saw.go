@@ -30,7 +30,7 @@ func (cM *ConnectionManager) Listen(listener net.Listener) {
     }
 
     cM.ConnectionCount++
-    log.Println(conn.RemoteAddr(), " connected")
+    log.Printf("%s connected. Active connections: %d", conn.RemoteAddr(), cM.ConnectionCount)
 
     go cM.handleMessage(conn)
   }
