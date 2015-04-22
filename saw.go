@@ -1,10 +1,9 @@
 package main
 
 import (
-  "errors"
   "log"
   "net"
-  "strings"
+  "sync"
 
   "github.com/ignacy/sawdb/api"
 )
@@ -22,56 +21,69 @@ func Initiate() *ConnectionManager {
   }
 }
 
-func handleAction(action string, cM *ConnectionManager) error {
-  components := strings.Split(action, "\t")
-  if len(components) < 3 {
-    return errors.New("Malformed action description")
-  }
-
-  if components[0] == "S" {
-    cM.Db.Put(components[1], components[2])
-  }
-
-  value, err := cM.Db.Get(components[1])
-  if err != nil {
-    log.Println("Failed to store record")
-  } else {
-    log.Println("Stored record: ", value)
-  }
-  return nil
-}
-
 func (cM *ConnectionManager) Listen(listener net.Listener) {
   log.Println("Waiting for connections")
+  var wg sync.WaitGroup
 
   for {
     conn, err := listener.Accept()
     if err != nil {
       log.Println("Connection error", err)
+      conn.Close()
+    } else {
+      cM.ConnectionCount++
+      log.Printf("%s connected. Active connections: %d", conn.RemoteAddr(), cM.ConnectionCount)
+      wg.Add(1)
+      go func() {
+        cM.handleMessage(conn)
+        wg.Done()
+      }()
+
+      go func() {
+        wg.Wait()
+        conn.Close()
+      }()
+
     }
-
-    cM.ConnectionCount++
-    log.Println(conn.RemoteAddr(), " connected")
-
-    go cM.handleMessage(conn)
   }
 }
 
-func (cM *ConnectionManager) handleMessage(conn net.Conn) {
+func (cM *ConnectionManager) handleMessage(conn net.Conn) (err error) {
+  defer func(cM *ConnectionManager) {
+    cM.ConnectionCount--
+  }(cM)
+
   messageBuffer := make([]byte, 1024)
-  _, err := conn.Read(messageBuffer)
+
+  _, err = conn.Read(messageBuffer)
   if err != nil {
     log.Println("Failed to read in a message")
+    return
   }
 
   message := string(messageBuffer)
-  log.Println("Received was: ", message)
+  log.Printf("Received message: %+v \n", message)
 
-  if err = handleAction(message, cM); err != nil {
-    log.Println("Error while handling action ", err)
+  request, err := api.NewRequest(message)
+  if err != nil {
+    log.Println("Error while creating DB request ", err)
+    return
   }
 
-  conn.Write([]byte("All good action handled \t\r\n"))
+  v, err := request.Process(*cM.Db)
+
+  log.Printf("Values: %+v \n", cM.Db.Items)
+
+  if err != nil {
+    log.Println("Failed request processing", err)
+    return
+  }
+
+  if v != "" {
+    conn.Write([]byte(v))
+  }
+  conn.Write([]byte("All good action handled"))
+  return
 }
 
 func main() {
