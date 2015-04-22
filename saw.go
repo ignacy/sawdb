@@ -3,6 +3,7 @@ package main
 import (
   "log"
   "net"
+  "sync"
 
   "github.com/ignacy/sawdb/api"
 )
@@ -22,47 +23,65 @@ func Initiate() *ConnectionManager {
 
 func (cM *ConnectionManager) Listen(listener net.Listener) {
   log.Println("Waiting for connections")
+  var wg sync.WaitGroup
 
   for {
     conn, err := listener.Accept()
     if err != nil {
       log.Println("Connection error", err)
+      conn.Close()
+    } else {
+      cM.ConnectionCount++
+      log.Printf("%s connected. Active connections: %d", conn.RemoteAddr(), cM.ConnectionCount)
+      wg.Add(1)
+      go func() {
+        cM.handleMessage(conn)
+        wg.Done()
+      }()
+
+      go func() {
+        wg.Wait()
+        conn.Close()
+      }()
+
     }
-
-    cM.ConnectionCount++
-    log.Printf("%s connected. Active connections: %d", conn.RemoteAddr(), cM.ConnectionCount)
-
-    go cM.handleMessage(conn)
   }
 }
 
-func (cM *ConnectionManager) handleMessage(conn net.Conn) {
+func (cM *ConnectionManager) handleMessage(conn net.Conn) (err error) {
+  defer func(cM *ConnectionManager) {
+    cM.ConnectionCount--
+  }(cM)
+
   messageBuffer := make([]byte, 1024)
-  _, err := conn.Read(messageBuffer)
+
+  _, err = conn.Read(messageBuffer)
   if err != nil {
     log.Println("Failed to read in a message")
+    return
   }
 
   message := string(messageBuffer)
-  log.Println("Received was: ", message)
+  log.Printf("Received message: %+v \n", message)
 
   request, err := api.NewRequest(message)
   if err != nil {
     log.Println("Error while creating DB request ", err)
+    return
   }
 
   v, err := request.Process(*cM.Db)
 
   if err != nil {
     log.Println("Failed request processing", err)
+    return
   }
 
   if v != "" {
     conn.Write([]byte(v))
-  } else {
-    conn.Write([]byte("All good action handled"))
   }
-
+  conn.Write([]byte("All good action handled"))
+  return
 }
 
 func main() {

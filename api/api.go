@@ -2,7 +2,7 @@ package api
 
 import (
   "errors"
-  "fmt"
+  "log"
 )
 
 var (
@@ -23,7 +23,7 @@ func NewSawDB() *SawDB {
 }
 
 func (db SawDB) Put(key string, value string) (err error) {
-  fmt.Printf("Inserting %s under key %s \n", value, key)
+  log.Println("Inserting value, key", value, key)
   db.Items[key] = value
   if _, ok := db.Items[key]; ok != true {
     return ErrSaveFailed
@@ -32,7 +32,7 @@ func (db SawDB) Put(key string, value string) (err error) {
 }
 
 func (db SawDB) Get(key string) (value string, err error) {
-  fmt.Println("Retriving value for key: ", key)
+  log.Println("Retriving value for key: ", key)
   value, ok := db.Items[key]
 
   if ok != true {
@@ -43,7 +43,7 @@ func (db SawDB) Get(key string) (value string, err error) {
 }
 
 func (db SawDB) Delete(key string) (err error) {
-  fmt.Println("Removing record for key:", key)
+  log.Println("Removing record for key:", key)
 
   _, ok := db.Items[key]
 

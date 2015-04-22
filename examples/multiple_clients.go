@@ -27,7 +27,7 @@ func main() {
   go conn1.Write(keyToStore)
 
   messageBuffer := make([]byte, 1024)
-  _, err = conn2.Read(messageBuffer)
+  _, err = conn1.Read(messageBuffer)
   if err != nil {
     log.Println("Failed to read in a message")
   }
@@ -39,7 +39,7 @@ func main() {
   go conn2.Write(getValue)
 
   messageBuffer = make([]byte, 1024)
-  _, err = conn1.Read(messageBuffer)
+  _, err = conn2.Read(messageBuffer)
   if err != nil {
     log.Println("Failed to read in a message")
   }
